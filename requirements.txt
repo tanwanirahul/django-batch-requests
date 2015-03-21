@@ -1,0 +1,10 @@
+Django==1.7.6
+flake8==2.4.0
+mccabe==0.3
+pep8==1.5.7
+py==1.4.26
+pyflakes==0.8.1
+pytest==2.6.4
+pytest-django==2.8.0
+coveralls==0.5
+pytest-cov==1.8.1
