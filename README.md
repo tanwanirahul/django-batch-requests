@@ -3,7 +3,7 @@ Django Batch Requests
 
 [![build-status-image]][travis]
 [![pypi-version]][pypi]
-[![coverage]][coverage]
+[![coverage]][coverage-repo]
 
 Django batch requests allow developers to combine multiple http requests into a single batch request. This is essentially useful to avoid making multiple http requests to save on round trip network latency.
 
@@ -38,3 +38,4 @@ Add `'batch_requests'` to your `INSTALLED_APPS` setting.
 [pypi]: https://pypi.python.org/pypi/django-batch-requests
 [Django Rest Framework]: https://github.com/tomchristie/django-rest-framework
 [coverage]: https://coveralls.io/repos/tanwanirahul/django-batch-requests/badge.png?branch=master
+[coverage-repo]: https://coveralls.io/r/tanwanirahul/django-batch-requests?branch=master
