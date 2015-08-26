@@ -103,4 +103,8 @@ def get_wsgi_request_object(curr_request, method, url, headers, body):
     request = _request_provider(url, data=body, secure=secure,
                                 content_type=content_type, **x_headers)
 
+    for key, value in curr_request.__dict__.iteritems():
+        if not hasattr(request, key):
+            setattr(request, key, value)
+
     return request
