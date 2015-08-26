@@ -104,7 +104,7 @@ def get_wsgi_request_object(curr_request, method, url, headers, body):
                                 content_type=content_type, **x_headers)
 
     for key, value in curr_request.__dict__.iteritems():
-        if not hasattr(request, key):
+        if not hasattr(request, key) and not key.startswith('_'):
             setattr(request, key, value)
 
     return request
