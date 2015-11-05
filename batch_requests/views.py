@@ -7,7 +7,7 @@
 import json
 
 from django.core.urlresolvers import resolve
-from django.http.response import HttpResponse, HttpResponseBadRequest,\
+from django.http import HttpResponse, HttpResponseBadRequest,\
     HttpResponseServerError
 from django.template.response import ContentNotRenderedError
 from django.views.decorators.csrf import csrf_exempt
