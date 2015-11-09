@@ -33,8 +33,9 @@ def get_response(wsgi_request):
         resp = HttpResponseServerError(content=exc.message)
 
     headers = dict(resp._headers.values())
+    reason_phrase = getattr(resp, 'reason_phrase', '') or getattr(resp, 'status_text', '')
     # Convert HTTP response into simple dict type.
-    d_resp = {"status_code": resp.status_code, "reason_phrase": resp.reason_phrase,
+    d_resp = {"status_code": resp.status_code, "reason_phrase": reason_phrase,
               "headers": headers}
     try:
         d_resp.update({"body": resp.content})
