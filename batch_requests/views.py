@@ -26,11 +26,9 @@ def get_response(wsgi_request):
     # Get the view / handler for this request
     view, args, kwargs = resolve(wsgi_request.path_info)
 
-    kwargs.update({"request": wsgi_request})
-
     # Let the view do his task.
     try:
-        resp = view(*args, **kwargs)
+        resp = view(wsgi_request, *args, **kwargs)
     except Exception as exc:
         resp = HttpResponseServerError(content=exc.message)
 
