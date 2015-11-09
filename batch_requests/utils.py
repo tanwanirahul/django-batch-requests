@@ -103,4 +103,7 @@ def get_wsgi_request_object(curr_request, method, url, headers, body):
     request = _request_provider(url, data=body, secure=secure,
                                 content_type=content_type, **x_headers)
 
+    if hasattr(curr_request, 'user'):
+        request.user = curr_request.user
+
     return request

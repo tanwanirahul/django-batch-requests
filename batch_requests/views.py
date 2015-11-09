@@ -82,10 +82,7 @@ def get_wsgi_requests(request):
 
         body = data.get("body", "")
         headers = data.get("headers", {})
-        req = get_wsgi_request_object(request, method, url, headers, body)
-        if hasattr(request, 'user'):
-            req.user = request.user
-        return req
+        return get_wsgi_request_object(request, method, url, headers, body)
 
     return [construct_wsgi_from_data(data) for data in requests]
 
