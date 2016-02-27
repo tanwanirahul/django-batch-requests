@@ -48,6 +48,10 @@ class BatchRequestSettings(object):
             executor_path = "batch_requests.concurrent.executor.SequentialExecutor"
             executor_class = import_class(executor_path)
             return executor_class()
+        else:
+            executor_path = self.CONCURRENT_EXECUTOR
+            executor_class = import_class(executor_path)
+            return executor_class(self.NUM_WORKERS)
 
     def __getattr__(self, attr):
         '''
