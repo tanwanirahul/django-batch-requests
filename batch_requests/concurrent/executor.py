@@ -4,6 +4,7 @@ Created on Feb 20, 2016
 @author: Rahul Tanwani
 '''
 from abc import ABCMeta
+from concurrent.futures.thread import ThreadPoolExecutor
 
 
 class Executor(object):
@@ -31,3 +32,14 @@ class SequentialExecutor(Executor):
             Calls the resp_generator for all the requests in sequential order.
         '''
         return [resp_generator(request) for request in requests]
+
+
+class ThreadBasedExecutor(Executor):
+    '''
+        An implementation of executor using threads for parallelism.
+    '''
+    def __init__(self, num_workers):
+        '''
+            Create a thread pool for concurrent execution with specified number of workers.
+        '''
+        self.executor_pool = ThreadPoolExecutor(num_workers)
