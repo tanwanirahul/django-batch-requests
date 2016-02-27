@@ -6,12 +6,15 @@
 
 from django.conf import settings
 from django.utils.importlib import import_module
+import multiprocessing
 
 DEFAULTS = {
     "HEADERS_TO_INCLUDE": ["HTTP_USER_AGENT", "HTTP_COOKIE"],
     "DEFAULT_CONTENT_TYPE": "application/json",
     "USE_HTTPS": False,
     "EXECUTE_PARALLEL": False,
+    "CONCURRENT_EXECUTOR": "batch_requests.concurrent.executor.ThreadBasedExecutor",
+    "NUM_WORKERS": multiprocessing.cpu_count() * 4,
     "MAX_LIMIT": 20
 }
 
