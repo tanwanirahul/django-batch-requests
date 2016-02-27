@@ -5,6 +5,7 @@ Created on Feb 20, 2016
 '''
 from abc import ABCMeta
 from concurrent.futures.thread import ThreadPoolExecutor
+from concurrent.futures.process import ProcessPoolExecutor
 
 
 class Executor(object):
@@ -43,3 +44,14 @@ class ThreadBasedExecutor(Executor):
             Create a thread pool for concurrent execution with specified number of workers.
         '''
         self.executor_pool = ThreadPoolExecutor(num_workers)
+
+
+class ProcessBasedExecutor(Executor):
+    '''
+        An implementation of executor using process(es) for parallelism.
+    '''
+    def __init__(self, num_workers):
+        '''
+            Create a process pool for concurrent execution with specified number of workers.
+        '''
+        self.executor_pool = ProcessPoolExecutor(num_workers)
