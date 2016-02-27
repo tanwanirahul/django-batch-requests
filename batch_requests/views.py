@@ -88,6 +88,15 @@ def get_wsgi_requests(request):
     return [construct_wsgi_from_data(data) for data in requests]
 
 
+def execute_requests(wsgi_requests):
+    '''
+        Execute the requests either sequentially or in parallel based on parallel
+        execution setting.
+    '''
+    executor = _settings.executor
+    return executor.execute(wsgi_requests, get_response)
+
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def handle_batch_requests(request, *args, **kwargs):
@@ -101,7 +110,7 @@ def handle_batch_requests(request, *args, **kwargs):
         return HttpResponseBadRequest(content=brx.message)
 
     # Fire these WSGI requests, and collect the response for the same.
-    response = [get_response(wsgi_request) for wsgi_request in wsgi_requests]
+    response = execute_requests(wsgi_requests)
 
     # Evrything's done, return the response.
     return HttpResponse(
