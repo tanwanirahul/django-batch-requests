@@ -1,7 +1,7 @@
 '''
 @author: Rahul Tanwani
 
-@summary: Contains base test case for reusable test methods. 
+@summary: Contains base test case for reusable test methods.
 '''
 import json
 

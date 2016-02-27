@@ -6,7 +6,6 @@
 '''
 import json
 
-from django.test import TestCase
 from tests.test_base import TestBase
 
 
