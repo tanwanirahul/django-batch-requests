@@ -6,6 +6,7 @@ import json
 from django.http.response import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
+from time import sleep
 
 
 class SimpleView(View):
@@ -106,3 +107,23 @@ class ExceptionView(View):
             Handles the get request.
         '''
         raise Exception("exception")
+
+
+class SleepingView(View):
+
+    '''
+        Make the current thread sleep for the number of seconds passed.
+        This is to mimic the long running services.
+    '''
+
+    def get(self, request, *args, **kwargs):
+        '''
+            Handles the get request.
+        '''
+        # Lookup for the duration to sleep.
+        seconds = int(request.GET.get("seconds", "5"))
+
+        # Make the current thread sleep for the specified duration.
+        sleep(seconds)
+        # Make the current thread sleep.
+        return HttpResponse("Success!")
