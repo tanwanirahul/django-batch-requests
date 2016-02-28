@@ -16,6 +16,7 @@ from django.views.decorators.http import require_http_methods
 from batch_requests.exceptions import BadBatchRequest
 from batch_requests.settings import br_settings as _settings
 from batch_requests.utils import get_wsgi_request_object
+from datetime import datetime
 
 
 def get_response(wsgi_request):
@@ -23,6 +24,7 @@ def get_response(wsgi_request):
         Given a WSGI request, makes a call to a corresponding view
         function and returns the response.
     '''
+    service_start_time = datetime.now()
     # Get the view / handler for this request
     view, args, kwargs = resolve(wsgi_request.path_info)
 
@@ -43,6 +45,10 @@ def get_response(wsgi_request):
     except ContentNotRenderedError:
         resp.render()
         d_resp.update({"body": resp.content})
+
+    # Check if we need to send across the duration header.
+    if _settings.ADD_DURATION_HEADER:
+        d_resp['headers'].update({_settings.DURATION_HEADER_NAME: (datetime.now() - service_start_time).seconds})
 
     return d_resp
 
@@ -103,6 +109,7 @@ def handle_batch_requests(request, *args, **kwargs):
     '''
         A view function to handle the overall processing of batch requests.
     '''
+    batch_start_time = datetime.now()
     try:
         # Get the Individual WSGI requests.
         wsgi_requests = get_wsgi_requests(request)
@@ -113,5 +120,9 @@ def handle_batch_requests(request, *args, **kwargs):
     response = execute_requests(wsgi_requests)
 
     # Evrything's done, return the response.
-    return HttpResponse(
+    resp = HttpResponse(
         content=json.dumps(response), content_type="application/json")
+
+    if _settings.ADD_DURATION_HEADER:
+        resp.__setitem__(_settings.DURATION_HEADER_NAME, str((datetime.now() - batch_start_time).seconds))
+    return resp

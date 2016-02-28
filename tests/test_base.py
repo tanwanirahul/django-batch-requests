@@ -6,6 +6,7 @@
 import json
 
 from django.test import TestCase
+from batch_requests.settings import br_settings as settings
 
 
 class TestBase(TestCase):
@@ -19,6 +20,10 @@ class TestBase(TestCase):
             Assert if the response of independent request is compatible with
             batch response.
         '''
+        # Remove duration header to compare.
+        if settings.ADD_DURATION_HEADER:
+            del batch_resp['headers'][settings.DURATION_HEADER_NAME]
+
         self.assertDictEqual(ind_resp, batch_resp, "Compatibility is broken!")
 
     def headers_dict(self, headers):

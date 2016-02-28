@@ -6,6 +6,7 @@
 import json
 
 from django.conf import settings
+from batch_requests.settings import br_settings
 from django.test import TestCase
 
 
@@ -77,6 +78,23 @@ class TestSettings(TestCase):
         batch_resp = json.loads(batch_req.content)[0]
 
         self.assertEqual(batch_resp['body'], value, "Default content type not working.")
+
+    def test_duration_header(self):
+        '''
+            Tests that duration header be present in all the requests.
+        '''
+        # Make a batch call to any API.
+        get_req = ("get", "/views/", '', {})
+
+        # Get the response for a batch request.
+        batch_requests = self._make_multiple_batch_request([get_req])
+
+        # Make sure we have the header present in enclosing batch response and all individual responses.
+        self.assertIn(br_settings.DURATION_HEADER_NAME, batch_requests._headers,
+                      "Enclosing batch request does not contain duration header.")
+
+        self.assertIn(br_settings.DURATION_HEADER_NAME, json.loads(batch_requests.content)[0]['headers'],
+                      "Individual batch request does not contain duration header.")
 
     def _batch_request(self, method, path, data, headers={}):
         '''
