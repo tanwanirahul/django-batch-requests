@@ -15,6 +15,8 @@ DEFAULTS = {
     "EXECUTE_PARALLEL": False,
     "CONCURRENT_EXECUTOR": "batch_requests.concurrent.executor.ThreadBasedExecutor",
     "NUM_WORKERS": multiprocessing.cpu_count() * 4,
+    "ADD_DURATION_HEADER": True,
+    "DURATION_HEADER_NAME": "batch_requests.duration",
     "MAX_LIMIT": 20
 }
 
