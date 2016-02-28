@@ -24,3 +24,10 @@ class TestThreadConcurrency(TestBaseConcurrency):
             the response.
         '''
         self.compare_seq_and_concurrent_req()
+
+    def test_duration(self):
+        '''
+            Compare that running tests with ThreadBasedConcurreny return faster than running
+            them sequentially.
+        '''
+        self.compare_seq_concurrent_duration()

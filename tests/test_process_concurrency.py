@@ -8,7 +8,7 @@ from tests.test_concurrency_base import TestBaseConcurrency
 from batch_requests.concurrent.executor import ProcessBasedExecutor
 
 
-class TestThreadConcurrency(TestBaseConcurrency):
+class TestProcessConcurrency(TestBaseConcurrency):
     '''
         Tests sequential and concurrent process based execution.
     '''
@@ -24,3 +24,10 @@ class TestThreadConcurrency(TestBaseConcurrency):
             the response.
         '''
         self.compare_seq_and_concurrent_req()
+
+    def test_duration(self):
+        '''
+            Compare that running tests with ProcessBasedConcurreny return faster than running
+            them sequentially.
+        '''
+        self.compare_seq_concurrent_duration()
