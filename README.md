@@ -236,7 +236,7 @@ There is no abvious answer to this, and it depends on various settings - the res
 
 [build-status-image]: https://secure.travis-ci.org/tanwanirahul/django-batch-requests.svg?branch=master
 [travis]: http://travis-ci.org/tanwanirahul/django-batch-requests?branch=master
-[pypi-version]: https://pypip.in/version/django-batch-requests/badge.svg
+[pypi-version]: https://badge.fury.io/py/django-batch-requests.svg
 [pypi]: https://pypi.python.org/pypi/django-batch-requests
 [Django Rest Framework]: https://github.com/tomchristie/django-rest-framework
 [coverage]: https://coveralls.io/repos/tanwanirahul/django-batch-requests/badge.png?branch=master
