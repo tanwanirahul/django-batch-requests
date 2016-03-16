@@ -7,7 +7,7 @@
 import json
 
 from django.core.urlresolvers import resolve
-from django.http.response import HttpResponse, HttpResponseBadRequest,\
+from django.http import HttpResponse, HttpResponseBadRequest,\
     HttpResponseServerError
 from django.template.response import ContentNotRenderedError
 from django.views.decorators.csrf import csrf_exempt
@@ -28,17 +28,16 @@ def get_response(wsgi_request):
     # Get the view / handler for this request
     view, args, kwargs = resolve(wsgi_request.path_info)
 
-    kwargs.update({"request": wsgi_request})
-
     # Let the view do his task.
     try:
-        resp = view(*args, **kwargs)
+        resp = view(wsgi_request, *args, **kwargs)
     except Exception as exc:
         resp = HttpResponseServerError(content=exc.message)
 
     headers = dict(resp._headers.values())
+    reason_phrase = getattr(resp, 'reason_phrase', '') or getattr(resp, 'status_text', '')
     # Convert HTTP response into simple dict type.
-    d_resp = {"status_code": resp.status_code, "reason_phrase": resp.reason_phrase,
+    d_resp = {"status_code": resp.status_code, "reason_phrase": reason_phrase,
               "headers": headers}
     try:
         d_resp.update({"body": resp.content})
