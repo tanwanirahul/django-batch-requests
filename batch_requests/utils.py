@@ -3,7 +3,10 @@
 
 @summary: Holds all the utilities functions required to support batch_requests.
 '''
-from django.test.client import RequestFactory, FakePayload
+import json
+
+from django.test.client import FakePayload, RequestFactory
+
 from batch_requests.settings import br_settings as _settings
 
 
@@ -91,7 +94,6 @@ def get_wsgi_request_object(curr_request, method, url, headers, body):
 
     # Override existing batch requests headers with the new headers passed for this request.
     x_headers.update(t_headers)
-
     content_type = x_headers.get("CONTENT_TYPE", _settings.DEFAULT_CONTENT_TYPE)
 
     # Get hold of request factory to construct the request.
@@ -100,7 +102,14 @@ def get_wsgi_request_object(curr_request, method, url, headers, body):
 
     secure = _settings.USE_HTTPS
 
-    request = _request_provider(url, data=body, secure=secure,
-                                content_type=content_type, **x_headers)
+    data = body
+    if data:
+        data = json.dumps(data)
+    else:
+        if 'CONTENT_LENGTH' in x_headers:
+            x_headers.pop('CONTENT_LENGTH')
 
+    request = _request_provider(url, data=data, secure=secure,
+                                content_type=content_type, **x_headers)
+    request.user = curr_request.user
     return request

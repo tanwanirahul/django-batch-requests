@@ -5,18 +5,18 @@
 '''
 
 import json
+from datetime import datetime
 
-from django.core.urlresolvers import resolve
-from django.http.response import HttpResponse, HttpResponseBadRequest,\
-    HttpResponseServerError
+from django.http.response import (HttpResponse, HttpResponseBadRequest,
+                                  HttpResponseServerError)
 from django.template.response import ContentNotRenderedError
+from django.urls import resolve
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from batch_requests.exceptions import BadBatchRequest
 from batch_requests.settings import br_settings as _settings
 from batch_requests.utils import get_wsgi_request_object
-from datetime import datetime
 
 
 def get_response(wsgi_request):
@@ -34,17 +34,21 @@ def get_response(wsgi_request):
     try:
         resp = view(*args, **kwargs)
     except Exception as exc:
-        resp = HttpResponseServerError(content=exc.message)
-
+        resp = HttpResponseServerError(content=str(exc))
     headers = dict(resp._headers.values())
     # Convert HTTP response into simple dict type.
-    d_resp = {"status_code": resp.status_code, "reason_phrase": resp.reason_phrase,
-              "headers": headers}
+    d_resp = {
+        "status_code": resp.status_code,
+        "reason_phrase": resp.reason_phrase,
+        "headers": headers,
+    }
+
     try:
         d_resp.update({"body": resp.content})
     except ContentNotRenderedError:
         resp.render()
         d_resp.update({"body": resp.content})
+    d_resp['body'] = d_resp['body'].decode('utf-8')
 
     # Check if we need to send across the duration header.
     if _settings.ADD_DURATION_HEADER:
@@ -87,7 +91,11 @@ def get_wsgi_requests(request):
         if method.lower() not in valid_http_methods:
             raise BadBatchRequest("Invalid request method.")
 
-        body = data.get("body", "")
+        body = None
+
+        if method.lower() not in ['get', 'options']:
+            body = data.get("body", "")
+
         headers = data.get("headers", {})
         return get_wsgi_request_object(request, method, url, headers, body)
 
@@ -114,14 +122,13 @@ def handle_batch_requests(request, *args, **kwargs):
         # Get the Individual WSGI requests.
         wsgi_requests = get_wsgi_requests(request)
     except BadBatchRequest as brx:
-        return HttpResponseBadRequest(content=brx.message)
+        return HttpResponseBadRequest(content=str(brx))
 
     # Fire these WSGI requests, and collect the response for the same.
     response = execute_requests(wsgi_requests)
 
     # Evrything's done, return the response.
-    resp = HttpResponse(
-        content=json.dumps(response), content_type="application/json")
+    resp = HttpResponse(content=json.dumps(response), content_type="application/json")
 
     if _settings.ADD_DURATION_HEADER:
         resp.__setitem__(_settings.DURATION_HEADER_NAME, str((datetime.now() - batch_start_time).seconds))
