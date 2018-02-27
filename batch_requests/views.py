@@ -48,7 +48,10 @@ def get_response(wsgi_request):
     except ContentNotRenderedError:
         resp.render()
         d_resp.update({"body": resp.content})
-    d_resp['body'] = json.loads(d_resp['body'], encoding='utf-8')
+    try:
+        d_resp['body'] = json.loads(d_resp['body'], encoding='utf-8')
+    except json.JSONDecodeError:
+        d_resp['body'] = d_resp['body'].decode('utf-8')
 
     # Check if we need to send across the duration header.
     if _settings.ADD_DURATION_HEADER:
