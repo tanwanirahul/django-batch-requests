@@ -6,8 +6,9 @@
 import json
 
 from django.conf import settings
-from batch_requests.settings import br_settings
 from django.test import TestCase
+
+from batch_requests.settings import br_settings
 
 
 class TestSettings(TestCase):
@@ -33,7 +34,7 @@ class TestSettings(TestCase):
 
         # Assert we get a bad request.
         self.assertEqual(batch_requests.status_code, 400, "MAX_LIMIT setting not working.")
-        self.assertTrue(batch_requests.content.lower().startswith("you can batch maximum of"))
+        self.assertTrue(batch_requests.content.lower().startswith(b"you can batch maximum of"))
 
     def test_custom_header(self):
         '''
@@ -106,7 +107,7 @@ class TestSettings(TestCase):
         '''
             Makes a batch request using django client.
         '''
-        return self.client.post("/api/v1/batch/", json.dumps([self._batch_request(method, url, body, headers)]),
+        return self.client.post("/api/v1/batch/", json.dumps({"batch": [self._batch_request(method, url, body, headers)]}),
                                 content_type="application/json")
 
     def _make_multiple_batch_request(self, requests):
@@ -114,4 +115,4 @@ class TestSettings(TestCase):
             Makes multiple batch request using django client.
         '''
         batch_requests = [self._batch_request(method, path, data, headers) for method, path, data, headers in requests]
-        return self.client.post("/api/v1/batch/", json.dumps(batch_requests), content_type="application/json")
+        return self.client.post("/api/v1/batch/", json.dumps({"batch": batch_requests}), content_type="application/json")
