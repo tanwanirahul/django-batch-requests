@@ -105,6 +105,7 @@ def get_wsgi_request_object(curr_request, method, url, headers, body):
     data = body
     if data:
         data = json.dumps(data)
+        x_headers['CONTENT_LENGTH'] = len(data)
     else:
         if 'CONTENT_LENGTH' in x_headers:
             x_headers.pop('CONTENT_LENGTH')
