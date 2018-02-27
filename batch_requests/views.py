@@ -63,7 +63,7 @@ def get_wsgi_requests(request):
         WSGIRequest object for each.
     '''
     valid_http_methods = ["get", "post", "put", "patch", "delete", "head", "options", "connect", "trace"]
-    requests = json.loads(request.body)
+    requests = json.loads(request.body).get('batch', [])
 
     if type(requests) not in (list, tuple):
         raise BadBatchRequest("The body of batch request should always be list!")
