@@ -7,6 +7,7 @@
 import json
 from datetime import datetime
 
+from django.http import Http404
 from django.http.response import (HttpResponse, HttpResponseBadRequest,
                                   HttpResponseServerError)
 from django.template.response import ContentNotRenderedError
@@ -24,38 +25,47 @@ def get_response(wsgi_request):
         Given a WSGI request, makes a call to a corresponding view
         function and returns the response.
     '''
+    d_resp = {}
     service_start_time = datetime.now()
     # Get the view / handler for this request
-    view, args, kwargs = resolve(wsgi_request.path_info)
-
-    kwargs.update({"request": wsgi_request})
-
-    # Let the view do his task.
     try:
-        resp = view(*args, **kwargs)
-    except Exception as exc:
-        resp = HttpResponseServerError(content=str(exc))
-    headers = dict(resp._headers.values())
-    # Convert HTTP response into simple dict type.
-    d_resp = {
-        "status_code": resp.status_code,
-        "reason_phrase": resp.reason_phrase,
-        "headers": headers,
-    }
+        view, args, kwargs = resolve(wsgi_request.path_info)
+        kwargs.update({'request': wsgi_request})
 
-    try:
-        d_resp.update({"body": resp.content})
-    except ContentNotRenderedError:
-        resp.render()
-        d_resp.update({"body": resp.content})
-    try:
-        d_resp['body'] = json.loads(d_resp['body'], encoding='utf-8')
-    except json.JSONDecodeError:
-        d_resp['body'] = d_resp['body'].decode('utf-8')
+        # Let the view do his task.
+        try:
+            resp = view(*args, **kwargs)
+            try:
+                d_resp.update({'body': resp.content})
+            except ContentNotRenderedError:
+                resp.render()
+                d_resp.update({'body': resp.content})
+                try:
+                    d_resp['body'] = json.loads(d_resp['body'], encoding='utf-8')
+                except json.JSONDecodeError:
+                    d_resp['body'] = d_resp['body'].decode('utf-8')
+        except Exception as exc:
+            resp = HttpResponseServerError(content=str(exc))
+            headers = dict(resp._headers.values())
+            # Convert HTTP response into simple dict type.
+            d_resp.update({
+                'status_code': resp.status_code,
+                'reason_phrase': resp.reason_phrase,
+                'headers': headers,
+            })
 
-    # Check if we need to send across the duration header.
-    if _settings.ADD_DURATION_HEADER:
-        d_resp['headers'].update({_settings.DURATION_HEADER_NAME: (datetime.now() - service_start_time).seconds})
+    except Http404 as error:
+        d_resp.update({
+            'status_code': 404,
+            'reason_phrase': 'Page not found',
+        })
+    finally:
+        # Check if we need to send across the duration header.
+        if 'headers' not in d_resp:
+            d_resp['headers'] = {}
+        if _settings.ADD_DURATION_HEADER:
+            d_resp['headers'].update({'request_url': wsgi_request.path_info})
+            d_resp['headers'].update({_settings.DURATION_HEADER_NAME: (datetime.now() - service_start_time).microseconds / 1000})
 
     return d_resp
 
@@ -134,5 +144,5 @@ def handle_batch_requests(request, *args, **kwargs):
     resp = HttpResponse(content=json.dumps(response), content_type="application/json")
 
     if _settings.ADD_DURATION_HEADER:
-        resp.__setitem__(_settings.DURATION_HEADER_NAME, str((datetime.now() - batch_start_time).seconds))
+        resp.__setitem__(_settings.DURATION_HEADER_NAME, str((datetime.now() - batch_start_time).microseconds / 1000))
     return resp
