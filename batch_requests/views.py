@@ -5,52 +5,80 @@
 '''
 
 import json
-
-from django.core.urlresolvers import resolve
-from django.http.response import HttpResponse, HttpResponseBadRequest,\
-    HttpResponseServerError
-from django.template.response import ContentNotRenderedError
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
+from datetime import datetime
 
 from batch_requests.exceptions import BadBatchRequest
 from batch_requests.settings import br_settings as _settings
 from batch_requests.utils import get_wsgi_request_object
-from datetime import datetime
+from django.http import Http404
+from django.http.response import (HttpResponse, HttpResponseBadRequest,
+                                  HttpResponseServerError)
+from django.template.response import ContentNotRenderedError
+from django.urls import resolve
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 
 
+def withDebugHeaders(view_handler):
+    '''
+        Decorator which wraps functions processing wsgi_requests and returning a dictionary,
+        to which it adds a header item containing information about time taken and request url.
+    '''
+    def inner(wsgi_request):
+        service_start_time = datetime.now()
+        result = view_handler(wsgi_request)
+
+        # Check if we need to send across the duration header.
+        if not _settings.ADD_DURATION_HEADER:
+            return result
+
+        time_taken = (datetime.now() - service_start_time).microseconds / 1000
+
+        result.setdefault('headers', {})
+        result['headers'].update({
+            'request_url': wsgi_request.path_info,
+            _settings.DURATION_HEADER_NAME: time_taken,
+        })
+    return inner
+
+
+@withDebugHeaders
 def get_response(wsgi_request):
     '''
         Given a WSGI request, makes a call to a corresponding view
         function and returns the response.
     '''
-    service_start_time = datetime.now()
     # Get the view / handler for this request
-    view, args, kwargs = resolve(wsgi_request.path_info)
-
-    kwargs.update({"request": wsgi_request})
+    try:
+        view, args, kwargs = resolve(wsgi_request.path_info)
+    except Http404 as error:
+        return {'status_code': 404, 'reason_phrase': 'Page not found'}
 
     # Let the view do his task.
+    kwargs.update({'request': wsgi_request})
     try:
-        resp = view(*args, **kwargs)
+        response = view(*args, **kwargs)
     except Exception as exc:
-        resp = HttpResponseServerError(content=exc.message)
+        # On error, convert HTTP response into simple dict type.
+        response = HttpResponseServerError(content=str(exc))
+        return {
+            'status_code': response.status_code,
+            'reason_phrase': response.reason_phrase,
+            'headers': dict(response._headers.values()),
+        }
 
-    headers = dict(resp._headers.values())
-    # Convert HTTP response into simple dict type.
-    d_resp = {"status_code": resp.status_code, "reason_phrase": resp.reason_phrase,
-              "headers": headers}
-    try:
-        d_resp.update({"body": resp.content})
-    except ContentNotRenderedError:
-        resp.render()
-        d_resp.update({"body": resp.content})
+    # Make sure that the response has been rendered
+    if not hasattr(response, 'render') and not callable(response.render):
+        body = response.content
+    else:
+        # Otherwise we render it and convert it to JSON
+        response.render()
+        try:
+            body = json.loads(response.content, encoding='utf-8')
+        except json.JSONDecodeError:
+            body = response.content.decode('utf-8')
 
-    # Check if we need to send across the duration header.
-    if _settings.ADD_DURATION_HEADER:
-        d_resp['headers'].update({_settings.DURATION_HEADER_NAME: (datetime.now() - service_start_time).seconds})
-
-    return d_resp
+    return {'body': body}
 
 
 def get_wsgi_requests(request):
@@ -59,7 +87,7 @@ def get_wsgi_requests(request):
         WSGIRequest object for each.
     '''
     valid_http_methods = ["get", "post", "put", "patch", "delete", "head", "options", "connect", "trace"]
-    requests = json.loads(request.body)
+    requests = json.loads(request.body).get('batch', [])
 
     if type(requests) not in (list, tuple):
         raise BadBatchRequest("The body of batch request should always be list!")
@@ -87,7 +115,11 @@ def get_wsgi_requests(request):
         if method.lower() not in valid_http_methods:
             raise BadBatchRequest("Invalid request method.")
 
-        body = data.get("body", "")
+        body = None
+
+        if method.lower() not in ['get', 'options']:
+            body = data.get("body", "")
+
         headers = data.get("headers", {})
         return get_wsgi_request_object(request, method, url, headers, body)
 
@@ -114,15 +146,14 @@ def handle_batch_requests(request, *args, **kwargs):
         # Get the Individual WSGI requests.
         wsgi_requests = get_wsgi_requests(request)
     except BadBatchRequest as brx:
-        return HttpResponseBadRequest(content=brx.message)
+        return HttpResponseBadRequest(content=str(brx))
 
     # Fire these WSGI requests, and collect the response for the same.
     response = execute_requests(wsgi_requests)
 
     # Evrything's done, return the response.
-    resp = HttpResponse(
-        content=json.dumps(response), content_type="application/json")
+    resp = HttpResponse(content=json.dumps(response), content_type="application/json")
 
     if _settings.ADD_DURATION_HEADER:
-        resp.__setitem__(_settings.DURATION_HEADER_NAME, str((datetime.now() - batch_start_time).seconds))
+        resp.__setitem__(_settings.DURATION_HEADER_NAME, str((datetime.now() - batch_start_time).microseconds / 1000))
     return resp

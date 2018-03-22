@@ -5,8 +5,8 @@
 '''
 
 from django.conf import settings
-from django.utils.importlib import import_module
 import multiprocessing
+from importlib import import_module
 
 DEFAULTS = {
     "HEADERS_TO_INCLUDE": ["HTTP_USER_AGENT", "HTTP_COOKIE"],

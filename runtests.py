@@ -10,7 +10,6 @@ import sys
 
 import pytest
 
-
 PYTEST_ARGS = {
     'default': ['tests'],
     'fast': ['tests', '-q'],
@@ -90,7 +89,7 @@ if __name__ == "__main__":
         pytest_args = PYTEST_ARGS[style]
 
     if run_tests:
-	print("Running tests...")
+        print("Running tests...")
         exit_on_failure(pytest.main(pytest_args))
     if run_flake8:
         exit_on_failure(flake8_main(FLAKE8_ARGS))

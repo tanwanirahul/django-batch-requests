@@ -6,6 +6,7 @@
 import json
 
 from django.test import TestCase
+
 from batch_requests.settings import br_settings as settings
 
 
@@ -36,7 +37,7 @@ class TestBase(TestCase):
         '''
             Returns a dict of all the parameters.
         '''
-        return {"status_code": status_code, "body": body, "headers": self.headers_dict(headers)}
+        return {"status_code": status_code, "body": json.loads(body, encoding='utf-8'), "headers": self.headers_dict(headers)}
 
     def _batch_request(self, method, path, data, headers={}):
         '''
@@ -48,7 +49,7 @@ class TestBase(TestCase):
         '''
             Makes a batch request using django client.
         '''
-        return self.client.post("/api/v1/batch/", json.dumps([self._batch_request(method, url, body, headers)]),
+        return self.client.post("/api/v1/batch/", json.dumps({'batch': [self._batch_request(method, url, body, headers)]}),
                                 content_type="application/json")
 
     def make_multiple_batch_request(self, requests):
@@ -56,5 +57,5 @@ class TestBase(TestCase):
             Makes multiple batch request using django client.
         '''
         batch_requests = [self._batch_request(method, path, data, headers) for method, path, data, headers in requests]
-        return self.client.post("/api/v1/batch/", json.dumps(batch_requests),
+        return self.client.post("/api/v1/batch/", json.dumps({'batch': batch_requests}),
                                 content_type="application/json")
