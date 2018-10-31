@@ -4,6 +4,7 @@ Django Batch Requests
 [![build-status-image]][travis]
 [![pypi-version]][pypi]
 [![coverage]][coverage-repo]
+[![Downloads](https://pepy.tech/badge/django-batch-requests)](https://pepy.tech/project/django-batch-requests)
 
 Django batch requests allow developers to combine multiple http requests into a single batch request. This is essentially useful to avoid making multiple http requests.
 
